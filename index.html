@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flappy PK — The Chunky Flopper</title>
+<link rel="icon" type="image/png" href="images/logo.png">
+<style>
+
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Baloo+2:wght@600;700;800&display=swap');
+
+  :root{
+    --sky:#7fd8f0;
+    --sky-deep:#4fc3e8;
+    --cream:#fff3dc;
+    --sun:#ffc93c;
+    --pink:#ff7ac6;
+    --pink-deep:#ff4fb8;
+    --green:#1dd18f;
+    --green-deep:#0fb87a;
+    --ink:#161616;
+    --road:#8b8f94;
+    --white:#ffffff;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    font-family:'Fredoka', sans-serif;
+    color:var(--ink);
+    background:var(--sky);
+    overflow-x:hidden;
+  }
+
+  h1,h2,h3,.display{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:800;
+    line-height:1.05;
+    margin:0;
+  }
+
+  .thick{
+    border:4px solid var(--ink);
+    box-shadow:6px 6px 0 var(--ink);
+  }
+
+  a{ text-decoration:none; color:inherit; }
+  img{ max-width:100%; display:block; }
+
+  /* ---------- CLOUD / SUN DECORATION ---------- */
+  .puff-cloud{
+    position:absolute;
+    background:var(--white);
+    border:4px solid var(--ink);
+    border-radius:50px;
+  }
+  .puff-cloud::before, .puff-cloud::after{
+    content:"";
+    position:absolute;
+    background:var(--white);
+    border:4px solid var(--ink);
+    border-radius:50%;
+  }
+
+  .sun{
+    position:absolute;
+    width:90px; height:90px;
+    background:var(--sun);
+    border:4px solid var(--ink);
+    border-radius:50%;
+  }
+  .sun::before{
+    content:"";
+    position:absolute;
+    inset:-22px;
+    border-radius:50%;
+    background:
+      repeating-conic-gradient(var(--ink) 0deg 3deg, transparent 3deg 45deg);
+    z-index:-1;
+    opacity:0.85;
+    mask: radial-gradient(circle, transparent 55px, black 56px);
+    -webkit-mask: radial-gradient(circle, transparent 55px, black 56px);
+  }
+
+  /* ---------- NAV ---------- */
+  header{
+    position:sticky; top:0; z-index:50;
+    background:var(--cream);
+    border-bottom:4px solid var(--ink);
+  }
+  .nav-wrap{
+    max-width:1120px; margin:0 auto;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 24px;
+  }
+  .logo{
+    display:flex; align-items:center; gap:10px;
+    font-size:1.4rem;
+  }
+  .logo-badge{
+    width:40px; height:40px;
+    border:3px solid var(--ink);
+    border-radius:50%;
+    overflow:hidden;
+    flex-shrink:0;
+  }
+  .logo-badge img{ width:100%; height:100%; object-fit:cover; }
+  nav ul{ list-style:none; display:flex; gap:28px; margin:0; padding:0; font-weight:600; }
+  nav a:hover{ color:var(--pink-deep); }
+  .nav-cta{
+    background:var(--green);
+    padding:10px 20px;
+    border:3px solid var(--ink);
+    border-radius:14px;
+    font-weight:700;
+    box-shadow:4px 4px 0 var(--ink);
+    transition:transform .12s ease;
+  }
+  .nav-cta:hover{ transform:translate(-2px,-2px); box-shadow:6px 6px 0 var(--ink); }
+
+  @media(max-width:720px){
+    nav ul{ display:none; }
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    position:relative;
+    padding:70px 24px 40px;
+    overflow:hidden;
+  }
+  .hero-inner{
+    max-width:1120px; margin:0 auto;
+    display:grid;
+    grid-template-columns:1.1fr 0.9fr;
+    gap:40px;
+    align-items:center;
+    position:relative;
+    z-index:2;
+  }
+  .eyebrow-tag{
+    display:inline-block;
+    background:var(--pink);
+    border:3px solid var(--ink);
+    border-radius:30px;
+    padding:6px 18px;
+    font-weight:700;
+    font-size:0.95rem;
+    box-shadow:3px 3px 0 var(--ink);
+    transform:rotate(-2deg);
+    margin-bottom:18px;
+  }
+  .hero h1{
+    font-size:clamp(2.6rem, 6vw, 4.4rem);
+    color:var(--ink);
+  }
+  .hero h1 .flap{ color:var(--pink-deep); }
+  .hero p.lead{
+    font-size:1.2rem;
+    max-width:480px;
+    margin-top:18px;
+    font-weight:500;
+    line-height:1.5;
+  }
+  .hero-ctas{
+    display:flex; gap:16px; flex-wrap:wrap;
+    margin-top:32px;
+  }
+  .btn{
+    display:inline-flex; align-items:center; gap:10px;
+    padding:16px 28px;
+    border-radius:16px;
+    font-weight:700;
+    font-size:1.05rem;
+    font-family:'Baloo 2', sans-serif;
+    border:4px solid var(--ink);
+    box-shadow:6px 6px 0 var(--ink);
+    transition:transform .12s ease, box-shadow .12s ease;
+    cursor:pointer;
+  }
+  .btn:hover{ transform:translate(-3px,-3px); box-shadow:9px 9px 0 var(--ink); }
+  .btn:active{ transform:translate(1px,1px); box-shadow:3px 3px 0 var(--ink); }
+  .btn-primary{ background:var(--green); color:var(--ink); }
+  .btn-secondary{ background:var(--white); color:var(--ink); }
+
+  .hero-stats{
+    display:flex; gap:14px; margin-top:34px; flex-wrap:wrap;
+  }
+  .stat-chip{
+    background:var(--ink);
+    color:var(--white);
+    border-radius:14px;
+    padding:10px 16px;
+    font-weight:700;
+    font-size:0.95rem;
+  }
+  .stat-chip b{ color:var(--sun); font-size:1.1rem; }
+
+  .hero-visual{
+    position:relative;
+    display:flex; justify-content:center;
+  }
+  .phone-frame{
+    width:270px;
+    border:5px solid var(--ink);
+    border-radius:36px;
+    overflow:hidden;
+    box-shadow:10px 10px 0 var(--ink);
+    background:var(--ink);
+    transform:rotate(3deg);
+    transition:transform .3s ease;
+  }
+  .phone-frame:hover{ transform:rotate(0deg); }
+  .phone-frame img{ width:100%; display:block; }
+
+  .float-badge{
+    position:absolute;
+    background:var(--sun);
+    border:4px solid var(--ink);
+    border-radius:50%;
+    width:110px; height:110px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center;
+    font-family:'Baloo 2';
+    font-weight:800;
+    box-shadow:5px 5px 0 var(--ink);
+    top:-20px; right:-10px;
+    transform:rotate(-8deg);
+    font-size:0.85rem;
+    z-index:3;
+  }
+  .float-badge span{ font-size:1.6rem; display:block; }
+
+  /* ---------- SECTION SHELL ---------- */
+  section{ position:relative; padding:90px 24px; }
+  .section-inner{ max-width:1120px; margin:0 auto; position:relative; z-index:2; }
+  .section-head{ text-align:center; max-width:640px; margin:0 auto 56px; }
+  .section-tag{
+    display:inline-block;
+    font-weight:700;
+    color:var(--pink-deep);
+    background:var(--white);
+    border:3px solid var(--ink);
+    border-radius:24px;
+    padding:5px 16px;
+    margin-bottom:16px;
+    font-size:0.9rem;
+  }
+  .section-head h2{ font-size:clamp(1.9rem, 4vw, 2.7rem); }
+  .section-head p{ margin-top:14px; font-size:1.1rem; font-weight:500; color:#333; }
+
+  /* ---------- SCREENSHOTS ---------- */
+  .screens{
+    background:var(--cream);
+    border-top:4px solid var(--ink);
+    border-bottom:4px solid var(--ink);
+  }
+  .screen-strip{
+    display:flex; gap:26px;
+    overflow-x:auto;
+    padding:10px 4px 30px;
+    scroll-snap-type:x mandatory;
+  }
+  .screen-strip::-webkit-scrollbar{ height:10px; }
+  .screen-strip::-webkit-scrollbar-thumb{ background:var(--ink); border-radius:8px; }
+  .screen-card{
+    flex:0 0 auto;
+    width:220px;
+    scroll-snap-align:start;
+  }
+  .screen-card .frame{
+    border:4px solid var(--ink);
+    border-radius:24px;
+    overflow:hidden;
+    box-shadow:6px 6px 0 var(--ink);
+  }
+  .screen-card .frame img{ width:100%; }
+  .screen-card .cap{
+    text-align:center;
+    font-weight:700;
+    margin-top:14px;
+    font-size:0.95rem;
+  }
+
+  /* ---------- FEATURES ---------- */
+  .features-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:26px;
+  }
+  @media(max-width:900px){ .features-grid{ grid-template-columns:repeat(2,1fr); } }
+  @media(max-width:600px){ .features-grid{ grid-template-columns:1fr; } }
+
+  .feature-card{
+    background:var(--white);
+    border:4px solid var(--ink);
+    border-radius:22px;
+    padding:28px;
+    box-shadow:6px 6px 0 var(--ink);
+    transition:transform .15s ease;
+  }
+  .feature-card:hover{ transform:translateY(-4px); }
+  .feature-icon{
+    width:54px; height:54px;
+    border-radius:16px;
+    border:3px solid var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.6rem;
+    margin-bottom:16px;
+  }
+  .feature-card h3{ font-size:1.25rem; margin-bottom:8px; }
+  .feature-card p{ font-size:0.98rem; color:#3a3a3a; line-height:1.5; margin:0; font-weight:500; }
+
+  .ic-1{ background:var(--sun); }
+  .ic-2{ background:var(--pink); }
+  .ic-3{ background:var(--sky-deep); }
+  .ic-4{ background:var(--green); }
+  .ic-5{ background:var(--sun); }
+  .ic-6{ background:var(--pink); }
+
+  /* ---------- MODES ---------- */
+  .modes{ background:var(--sky-deep); border-top:4px solid var(--ink); border-bottom:4px solid var(--ink);}
+  .mode-list{ display:flex; flex-direction:column; gap:16px; max-width:700px; margin:0 auto; }
+  .mode-row{
+    display:flex; align-items:center; gap:18px;
+    background:var(--cream);
+    border:4px solid var(--ink);
+    border-radius:18px;
+    padding:16px 22px;
+    box-shadow:5px 5px 0 var(--ink);
+  }
+  .mode-dot{
+    width:20px; height:20px; border-radius:50%;
+    border:3px solid var(--ink);
+    flex-shrink:0;
+  }
+  .mode-row h4{ margin:0; font-family:'Baloo 2'; font-size:1.1rem; }
+  .mode-row p{ margin:2px 0 0; font-size:0.92rem; color:#444; font-weight:500; }
+
+  /* ---------- DOWNLOAD ---------- */
+  .download{
+    background:var(--pink);
+    border-top:4px solid var(--ink);
+    border-bottom:4px solid var(--ink);
+    text-align:center;
+  }
+  .download-card{
+    background:var(--cream);
+    border:5px solid var(--ink);
+    border-radius:28px;
+    max-width:640px;
+    margin:0 auto;
+    padding:48px 36px;
+    box-shadow:9px 9px 0 var(--ink);
+  }
+  .download-card h2{ font-size:clamp(1.8rem,4vw,2.4rem); }
+  .download-card p{ font-weight:500; font-size:1.05rem; margin-top:12px; color:#333; }
+  .apk-details{
+    display:flex; justify-content:center; gap:24px;
+    margin:24px 0;
+    flex-wrap:wrap;
+  }
+  .apk-detail{ font-size:0.9rem; font-weight:700; }
+  .apk-detail span{ display:block; font-size:1.3rem; font-family:'Baloo 2'; color:var(--pink-deep); }
+  .big-download{
+    margin-top:10px;
+    font-size:1.2rem;
+    padding:20px 40px;
+  }
+  .fine-print{
+    margin-top:20px;
+    font-size:0.85rem;
+    color:#555;
+    font-weight:500;
+  }
+
+  /* ---------- STEPS (install guide) ---------- */
+  .steps{
+    display:flex; flex-direction:column; gap:14px;
+    max-width:560px; margin:36px auto 0; text-align:left;
+  }
+  .step{
+    display:flex; gap:16px; align-items:flex-start;
+    background:var(--white);
+    border:3px solid var(--ink);
+    border-radius:16px;
+    padding:14px 18px;
+  }
+  .step-num{
+    width:32px; height:32px; border-radius:50%;
+    background:var(--sun); border:3px solid var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Baloo 2'; font-weight:800; flex-shrink:0;
+  }
+  .step p{ margin:0; font-weight:500; font-size:0.95rem; }
+
+  /* ---------- FOOTER ---------- */
+  footer{
+    background:var(--ink);
+    color:var(--cream);
+    padding:50px 24px 30px;
+    text-align:center;
+  }
+  footer .logo-badge{ background:var(--sun); }
+  footer p{ font-weight:500; opacity:0.8; margin-top:10px; font-size:0.9rem; }
+  footer .foot-links{ display:flex; gap:20px; justify-content:center; margin-top:18px; font-weight:600; flex-wrap:wrap; }
+  footer .foot-links a:hover{ color:var(--sun); }
+
+  .road-strip{
+    height:28px;
+    background:repeating-linear-gradient(90deg, var(--white) 0 24px, transparent 0 48px) center/48px 6px no-repeat,
+               var(--road);
+    border-top:4px solid var(--ink);
+    border-bottom:4px solid var(--ink);
+  }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav-wrap">
+    <div class="logo">
+      <div class="logo-badge"><img src="images/logo.png" alt="Flappy PK logo"></div>
+      <span style="font-family:'Baloo 2'; font-weight:800;">Flappy PK</span>
+    </div>
+    <nav>
+      <ul>
+        <li><a href="#screens">Screenshots</a></li>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#modes">Modes</a></li>
+      </ul>
+    </nav>
+    <a href="#download" class="nav-cta">Get the APK</a>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="puff-cloud" style="width:90px; height:50px; top:60px; left:6%;"></div>
+  <div class="sun" style="top:40px; right:8%;"></div>
+
+  <div class="hero-inner">
+    <div>
+      <span class="eyebrow-tag">Free • Android • No engine, pure OpenGL grit</span>
+      <h1>Flap chunky.<br><span class="flap">Dodge everything.</span></h1>
+      <p class="lead">Flappy PK is the tap-to-flap game with a golden-pipe twist, a built-in AI autopilot, seven ways to lose (or relax), and a bird that can literally be your own face.</p>
+      <div class="hero-ctas">
+        <a href="#download" class="btn btn-primary">Download APK</a>
+        <a href="#screens" class="btn btn-secondary">See it in action</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-chip"><b>7</b> game modes</div>
+        <div class="stat-chip"><b>2P</b> WiFi battle</div>
+        <div class="stat-chip"><b>+5</b> golden pipes</div>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="phone-frame">
+        <img src="images/511648.jpg" alt="Flappy PK home screen">
+      </div>
+      <div class="float-badge">BEST<span>37</span>can you beat it?</div>
+    </div>
+  </div>
+</section>
+
+<div class="road-strip"></div>
+
+<!-- SCREENSHOTS -->
+<section class="screens" id="screens">
+  <div class="section-inner">
+    <div class="section-head">
+      <span class="section-tag">A closer look</span>
+      <h2>Every screen, hand-flopped</h2>
+      <p>From the home menu to mid-air panic — here's what actually opens on your phone.</p>
+    </div>
+    <div class="screen-strip">
+      <div class="screen-card">
+        <div class="frame"><img src="images/511648.jpg" alt="Home screen with Tap to Play"></div>
+        <div class="cap">Home screen</div>
+      </div>
+      <div class="screen-card">
+        <div class="frame"><img src="images/511650.jpg" alt="Select mode screen"></div>
+        <div class="cap">Mode select</div>
+      </div>
+      <div class="screen-card">
+        <div class="frame"><img src="images/511654.jpg" alt="Wi-Fi battle setup screen"></div>
+        <div class="cap">WiFi 2P battle</div>
+      </div>
+      <div class="screen-card">
+        <div class="frame"><img src="images/511652.jpg" alt="Settings screen with backgrounds and pipe colors"></div>
+        <div class="cap">Full customization</div>
+      </div>
+      <div class="screen-card">
+        <div class="frame"><img src="images/511658.jpg" alt="Gameplay screen with pipes"></div>
+        <div class="cap">In-game</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="section-inner">
+    <div class="section-head">
+      <span class="section-tag">What's inside</span>
+      <h2>More than one flap</h2>
+      <p>Built with a lot of small details that add up to a game you'll actually keep opening.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon ic-1">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="15" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 15l-5-5-9 9"/></svg>
+        </div>
+        <h3>Custom bird photo</h3>
+        <p>Pick any photo from your gallery and it becomes your bird. Yes, that means your face can flap through pipes.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon ic-2">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1"/><circle cx="14" cy="8.5" r="1"/><circle cx="16.5" cy="12.5" r="1"/><circle cx="10.5" cy="15" r="1"/></svg>
+        </div>
+        <h3>Full look control</h3>
+        <p>Six backgrounds and six pipe colors to mix and match, so your run never looks like anyone else's.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon ic-3">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12a11 11 0 0 1 14 0"/><path d="M8.5 15.5a6 6 0 0 1 7 0"/><circle cx="12" cy="19" r="1.2" fill="var(--ink)"/></svg>
+        </div>
+        <h3>Same-WiFi 2P battle</h3>
+        <p>Host a match or join by IP. Same pipes for both players — whoever survives longer wins, bragging rights included.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon ic-4">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="7" width="14" height="11" rx="3"/><circle cx="9.5" cy="12.5" r="1.2" fill="var(--ink)"/><circle cx="14.5" cy="12.5" r="1.2" fill="var(--ink)"/><path d="M12 7V4"/><circle cx="12" cy="3" r="1"/></svg>
+        </div>
+        <h3>Auto Play mode</h3>
+        <p>Let the AI take the wheel and watch it fly the gaps perfectly. Great for background chill or seeing how it's done.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon ic-5">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0V4z"/><path d="M8 5H5a3 3 0 0 0 3 4"/><path d="M16 5h3a3 3 0 0 1-3 4"/><path d="M12 13v3"/><path d="M9 20h6"/><path d="M10.5 16h3l.5 4h-4z"/></svg>
+        </div>
+        <h3>Achievements</h3>
+        <p>Getting Warm, Flap Master, and more — unlockable milestones that track your progress in real modes.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon ic-6">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v6"/><path d="M12 15v6"/><path d="M4 12h6"/><path d="M14 12h6"/><path d="M6 6l4 4"/><path d="M14 14l4 4"/><path d="M18 6l-4 4"/><path d="M10 14l-4 4"/></svg>
+        </div>
+        <h3>Golden pipes</h3>
+        <p>Spot a golden pipe and fly it clean for a +5 score bonus. Small risk, bigger flex on the leaderboard.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MODES -->
+<section class="modes" id="modes">
+  <div class="section-inner">
+    <div class="section-head" style="color:var(--ink);">
+      <span class="section-tag">Pick your pain</span>
+      <h2>Seven modes, one bird</h2>
+      <p>Every difficulty is a different personality. Auto and Zen scores don't count toward BEST — those are just for fun.</p>
+    </div>
+    <div class="mode-list">
+      <div class="mode-row"><div class="mode-dot" style="background:var(--green);"></div><div><h4>Easy — Chill pipes</h4><p>Wide gaps, low stress. Good for warming up your thumb.</p></div></div>
+      <div class="mode-row"><div class="mode-dot" style="background:var(--sun);"></div><div><h4>Medium — Classic</h4><p>The original balance. This is where BEST scores are usually made.</p></div></div>
+      <div class="mode-row"><div class="mode-dot" style="background:var(--pink);"></div><div><h4>Hard — Tiny gaps</h4><p>Precision only. One wrong tap and you're restarting.</p></div></div>
+      <div class="mode-row"><div class="mode-dot" style="background:var(--sky-deep);"></div><div><h4>Auto Play — AI flies</h4><p>Sit back and watch the bird thread every gap by itself.</p></div></div>
+      <div class="mode-row"><div class="mode-dot" style="background:var(--green-deep);"></div><div><h4>Zen — No death, relax</h4><p>Pipes are there, but you can't lose. Pure flapping meditation.</p></div></div>
+      <div class="mode-row"><div class="mode-dot" style="background:#ff5a3c;"></div><div><h4>Insane — Moving pipes</h4><p>The pipes shift as you approach. Reflexes only, no memorizing.</p></div></div>
+      <div class="mode-row"><div class="mode-dot" style="background:var(--ink);"></div><div><h4>Daily Challenge</h4><p>A fresh, fixed layout every day — same seed for everyone playing.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- DOWNLOAD -->
+<section class="download" id="download">
+  <div class="download-card">
+    <h2>Ready to flop?</h2>
+    <p>Grab the APK straight from GitHub — no store, no account, just install and flap.</p>
+
+    <div class="apk-details">
+      <div class="apk-detail">Platform<span>Android</span></div>
+      <div class="apk-detail">Price<span>Free</span></div>
+      <div class="apk-detail">Made by<span>Ilhan PK</span></div>
+    </div>
+
+    <a class="btn btn-primary big-download" href="https://github.com/ilhanpayyanakkadavan-art/Iggicugi/raw/refs/heads/main/flappy%20pk.apk" download>Download flappy pk.apk</a>
+
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><p>Tap the download button above and let the APK finish downloading.</p></div>
+      <div class="step"><div class="step-num">2</div><p>Open the downloaded file. If Android blocks it, allow "install unknown apps" for your browser when prompted.</p></div>
+      <div class="step"><div class="step-num">3</div><p>Tap install, open Flappy PK, and hit "Tap to Play!"</p></div>
+    </div>
+
+    <p class="fine-print">Flappy PK isn't on the Play Store, so Android will ask for one-time permission to install from your browser. This is normal for APKs distributed outside the store.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="logo" style="justify-content:center;">
+    <div class="logo-badge"><img src="images/logo.png" alt="Flappy PK logo"></div>
+    <span style="font-family:'Baloo 2'; font-weight:800; font-size:1.2rem;">Flappy PK</span>
+  </div>
+  <p>The Chunky Flopper — made by Ilhan PK</p>
+  <div class="foot-links">
+    <a href="#screens">Screenshots</a>
+    <a href="#features">Features</a>
+    <a href="#modes">Modes</a>
+    <a href="#download">Download</a>
+  </div>
+</footer>
+
+</body>
+</html>
